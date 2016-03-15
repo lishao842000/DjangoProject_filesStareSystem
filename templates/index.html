@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>文件共享系统</title>
+    <link rel="stylesheet" href="../static/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../static/css/fileShare.css">
+    <script style="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script style="text/javascript" src="../static/bootstrap/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="../static/js/fileShare.js"></script>
+</head>
+<body style="height: 700px;">
+    <div class="container-fluid" style="padding: 0px">
+        <div>
+            <nav class="navbar navbar-default navbar-static-top">
+                <ul class="nav nav-pills" id="nav">
+                    <li class="active"><a href="#" data-toggle="tab">首页</a></li>
+                    <li><a href="#" data-toggle="tab">关于</a></li>
+                    <ul class="nav nav-pills" style="float: right;margin-right: 10px;">
+                        <li><a href="#">登陆</a></li>
+                        <li><a href="#">关于</a></li>
+                    </ul>
+                </ul>
+            </nav>
+        </div>
+        <div class="tools row">
+            <!-- Single button -->
+            <div class="btn-group col-md-1 custom">
+              <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                文件操作 <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                <li><a href="#">上传文件</a></li>
+                <li><a href="#">下载文件</a></li>
+              </ul>
+            </div>
+            <div class="input-group col-lg-3 col-lg-offset-2">
+                <input type="text" class="form-control" aria-label="...">
+                <div class="input-group-btn">
+                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">按类型搜索 <span class="caret"></span></button>
+                    <ul class="dropdown-menu dropdown-menu-right">
+                        <li><a href="#">按文件名</a></li>
+                        <li role="separator" class="divider"></li>
+                        <li><a href="#">按上传者</a></li>
+                    </ul>
+                </div><!-- /btn-group -->
+                <span class="input-group-btn">
+                    <button class="btn btn-primary" type="button">搜索</button>
+                </span>
+            </div><!-- /input-group -->
+        </div>
+        <div class="container-fluid">
+            <div class="contain">
+                <div class="left">
+                    <div class="expander"></div>
+                    <div style="margin-bottom: 10px"><span><strong>文件目录</strong></span></div>
+                    <div class="sideBar">
+                        <p>1dadadada1dadadada1dadadada1dadadada1dadadada1dadadada</p>
+                        <p>11dadadada1dadadada1dadadada1dadadada1dadadada1dadadada</p>
+                        <p>1</p>
+                        <p>1</p>
+                        <p>1</p>
+                        <p>1</p>
+                        <p>1</p>
+                        <p>1</p>
+                        <p>1</p>
+                        <p>1</p>
+                        <p>1</p>
+                        <p>1</p>
+                        <p>1</p>
+                        <p>1</p>
+                        <p>1</p>
+                        <p>1</p>
+                        <p>1</p>
+                        <p>1</p>
+                        <p>1</p>
+                        <p>1</p>
+                        <p>1</p>
+                        <p>1</p>
+                        <p>1</p>
+                        <p>1</p>
+                    </div>
+                </div>
+			    <div class="right table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <td class="check"><input type="checkbox"></td>
+                                <td><strong>ID</strong></td>
+                                <td><strong>文件名</strong></td>
+                                <td><strong>上传时间</strong></td>
+                                <td><strong>上传自</strong></td>
+                                <td><strong>是否共享</strong></td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><input type="checkbox"></td>
+                                <td>1</td>
+                                <td>我是中国人</td>
+                                <td>2015.612</td>
+                                <td>李少华</td>
+                                <td>
+                                    <div class="checkboxThree">
+  		                                <input type="checkbox" value="1" id="checkboxThreeInput" class="checkboxThreeInput" name="" />
+	  	                                <label for="checkboxThreeInput"></label>
+  	                                </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox"></td>
+                                <td>1</td>
+                                <td>我是中国人</td>
+                                <td>2015.612</td>
+                                <td>李少华</td>
+                                <td>
+                                    <div class="checkboxThree">
+  		                                <input type="checkbox" value="1" id="checkboxThreeInput1" class="checkboxThreeInput" name="" />
+	  	                                <label for="checkboxThreeInput1"></label>
+  	                                </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+		    </div>
+        </div>
+    </div>
+
+</body>
+</html>

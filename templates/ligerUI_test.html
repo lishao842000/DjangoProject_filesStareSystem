@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html">
+<head>
+    <title>文件管理</title>
+    <meta name="keywords" content="文件管理系统">
+    <script src="../static/lib/jquery/jquery-1.9.0.min.js" type="text/javascript"></script>
+    <script src="../static/lib/jquery-validation/jquery.validate.min.js" type="text/javascript"></script>
+    <link href="../static/lib/ligerUI/skins/Aqua/css/ligerui-all.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="../static/css/login.css" type="text/css">
+    <link rel="stylesheet" href="../static/css/register.css" type="text/css">
+    <link rel="stylesheet" href="../static/css/ligerUI.css" type="text/css">
+    <script src="../static/js/csrf_token.js" type="text/javascript"></script>
+    <script src="../static/lib/ligerUI/js/core/base.js" type="text/javascript"></script>
+    <script src="../static/lib/ligerUI/js/ligerui.all.js" type="text/javascript"></script>
+    <script src="../static/js/login_register.js" type="text/javascript" charset="UTF-8"></script>
+    <style type="text/css">
+        .l-tree .l-tree-icon-none img{width:16px; height:16px; margin:3px;}
+    </style>
+    <script type="text/javascript">
+        $(function (){
+            var manager = null;
+            var Node = null;
+            var myaccount = '../static/lib/ligerUI/skins/icons/myaccount.gif';
+            var memeber = '../static/lib/ligerUI/skins/icons/memeber.gif';
+            var archives = '../static/lib/ligerUI/skins/icons/archives.gif';
+            var treeManager = null;
+            //$.ajaxSetup({headers: {"X-CSRFToken": '{{ csrf_token }}'}});
+            function treeview(){
+                //var treeJsonData = data;
+                $("#tree1").ligerTree({        //动态异步加载目录树结构数据
+                    url: "treeView",
+                    //data: treeJsonData,
+                    //data: Data,
+                    checkbox: false,
+                    slide: false,
+                    idFieldName: 'id',
+                    parentIDFieldName: 'pid',
+                    slide: true,
+                    parentIcon: "folder",
+                    childIcon: "folder",
+                    nodeWidth: 500,
+                    onSelect: function (d) {
+                        toOtherPageNode = d;
+                        toUploadManager = $("#tree1").ligerGetTreeManager();
+                        var node_array = new Array();
+                        var li_elements = $(d.target).find("li");
+                        if(d.data == null){
+                            return false;
+                        }else if(li_elements.length == 0){
+                            node_array.push({pid: d.data.pid, id: d.data.id});
+                        }
+                        $.each(li_elements, function(index, li_element){
+                            var node_id = $(li_element).attr("id");
+                            var node_pid = $(li_element).parent().parent("li").attr("id");
+                            node_array.push({id: node_id, pid: node_pid});
+                            //console.log("id"+$(li_element).attr("id"));
+                            //console.log("pid"+$(li_element).parent().parent("li").attr("id"));
+                        });
+                        //console.log(node_array);
+                        var _node_array = JSON.stringify(node_array);
+                        $.post("getdata", {"fileData": _node_array}, function (data, status){
+                            if (status == "success"){
+                                griddata = data;
+                                setgrid(griddata);
+                                gridmanager.changePage("first");
+                                return true;
+                            }
+                        })
+                    },
+                    onCancelselect: function (onCancelselectNode) {
+                        toOtherPageNode = null;
+                    },
+                    onAfterAppend: function (parentNode, newdata) {
+                        $(".fileCount").html('');            //统计节点下的文件个数
+                        //get_node_data("ul#tree1");
+                        //alert("appended");
+                        getChirldNode("#tree1");
+
+                    },
+                    onContextmenu: function (node, e) {
+                        actionNodeID = node.data.text;
+                        //alert(e.currentTarget);
+                        //alert(actionNodeID);
+                        //alert(node.data.classid);
+                        manager = $("#tree1").ligerGetTreeManager();
+                        //alert("TreeManager:"+manager);
+                        Node = node;
+                        if (node.data.pid == 0) {
+                            menu.setDisable(1);
+                            menu.setDisable(2);
+                            menu.show({top: e.pageY, left: e.pageX});
+                        } else {
+                            menu.setEnable(1);
+                            menu.setEnable(2);
+                            menu.show({top: e.pageY, left: e.pageX});
+                        }
+                        return false;
+                    },
+                    onExpand: function (note) {
+                        //alert(note.data.id);
+                        $.post('expandNode', {id: note.data.id, pid: note.data.pid}, function (data, status) {
+                            if (status == 'success') {
+                                return true;
+                            }
+                        })
+                    },
+                    onCollapse: function (note) {
+                        $.post('CollapseNode', {id: note.data.id, pid: note.data.pid}, function (data, status) {
+                            if (status == 'success') {
+                                return true;
+                            }
+                        })
+                    }
+                });
+                treeManager = $("#tree1").ligerGetTreeManager();
+            }
+            treeview();  //创建目录树结构视图
+            function alterTreeItem(node){
+                var node = manager.getSelected();
+                $("#error1").hide();
+                $("#dirName").val("");
+                $("#dirName").css({"border":"1px solid #C6C6C6"});
+                if (node){
+                    //alert(node.data.text);
+                    $.ligerDialog.open({
+                        target: $("#alterSubdirName"),
+                        title: "编辑目录名称",
+                        width: 380,
+                        height: 150,
+                        modal: true,
+                        isHidden: true,
+                        buttons: [{text:"确定", onclick: function(iterm, dialog){validata(dialog, node)}
+                        }, {text: "取消", onclick: function(iterm, dialog){dialog.hide()}}]
+                    })
+                }
+            };
+            function validata(obj, node){
+                if ($("#dirName").val()){
+                    $("#error1").hide();
+                    $("#dirName").css({"border":"1px solid #C6C6C6"});
+                    $.get("updateTree", { id: Node.data.id, pid: Node.data.pid, text: $("#dirName").val()}, function(d, status){
+                        if (status == "success"){
+                            manager.update(node.target, d);
+                        }else{alert("修改失败")}
+                    })
+                    obj.hide();
+                }else{
+                    $("#dirName").css({"border":"1px solid red"});
+                    $("#error1").show();
+                    return false;
+                }
+            };
+            function removeTreeItem(){
+                var node = manager.getSelected();
+                if (node){
+                    if (node.data.children != undefined && node.data.children.length > 0){
+                        $.ligerDialog.warn('该目录下包含一个或多个子目录，请先删除子目录！')
+                    }else if (node.data.children == undefined){
+                        $.ligerDialog.open({
+                            target: $("#removeDialog_simple"),
+                            title: "删除提示",
+                            width: 300,
+                            height: 149,
+                            modal: true,
+                            isDrag: true,
+                            isHidden: false,
+                            buttons: [{text:"确定", onclick: function(iterm, dialog){
+                                var treeItem = null;
+                                if ($("#_checkbox").is(":checked") == true){
+                                    treeItem = {id: node.data.id, pid: node.data.pid, checked: "true"};
+                                }else{
+                                    treeItem = {id: node.data.id, pid: node.data.pid, checked: "false"};
+                                }
+
+                                $.get("removeTreeItem", treeItem, function(data, status){
+                                    if (status == "success"){
+                                        manager.remove(node);
+                                        //getChirldNode("ul#tree1");
+                                        dialog.hidden();
+                                        dialog.close();
+                                        window.location.reload();
+                                        //manager.refreshTree();
+                                    }
+                                })
+                            }
+                                    }, {text: "取消", onclick: function(iterm, dialog){dialog.hidden()}}]
+
+                        });
+
+                    }
+                }else{
+                    alert('请先选择节点');
+                }
+            };
+
+            var has_files = null;
+            function addTreeItem(obj){
+                if ($("#subDirName").val()){
+                    $("#error").hide();
+                    $("#subDirName").css({"border":"1px solid #C6C6C6"});
+                    var Node = treeManager.getSelected();
+                    var nodePid = Node.data.id;
+                    var id_arrat = new Array();
+                    var _ids = $("#tree1").find("li");
+                    $.each(_ids, function(index, _data){
+                        _id = parseInt($(_data).attr("id"));
+                        id_arrat.push(_id);
+                    });
+                    var nodeId = Math.max.apply(null, id_arrat) + 1;
+                    var nodeText = $("#subDirName").val();
+                    var data = [];
+                    var newNode = {id: nodeId, pid: nodePid, text: nodeText, isExpand: true};
+                    $.post("createTree", newNode, function(returnData, status){
+                        if (status == "success"){
+                            move_files_to(newNode, Node);
+                            data.push(returnData);
+                            treeManager.append(Node.target, data);
+                            treeview();  //重新载入目录树结构;
+
+                        }
+
+                    });
+                    obj.hide();
+                }else{
+                    $("#subDirName").css({"border":"1px solid red"});
+                    $("#error").show();
+                    return false;
+                }
+            }
+
+            function popText(node, e){
+                $("#error").hide();
+                $("#subDirName").val("");
+                $("#subDirName").css({"border":"1px solid #C6C6C6"});
+                $.ligerDialog.open({
+                    target: $("#addSubdirDialog"),
+                    title: "创建子目录",
+                    width: 380,
+                    height: 150,
+                    modal: true,
+                    isHidden: true,
+                    buttons: [{text:"确定", onclick: function(iterm, dialog){addTreeItem(dialog);}
+                    }, {text: "取消", onclick: function(iterm, dialog){dialog.hide()}}]
+                })
+            }
+            $(document).bind("contextmenu", function(e){
+                //e.preventDefault();
+            });
+
+            menu = $.ligerMenu({ top: 100, left: 100, width: 120, items:
+                    [
+                        { id: 0, text: '增加子目录', click: function(node, e){
+                            $.post("checkSession", function(data, status){
+                                if(status == "success"){
+                                    if (data == "true"){
+                                        var node = treeManager.getSelected();
+                                        $.post('node_has_files', {'id':node.data.id, 'pid':node.data.pid}, function(data, status){
+                                            if(status == "success"){
+                                                if(data == "false"){
+                                                    has_files = false;
+                                                    popText(node, e);
+
+                                                }else if(data == "true"){
+                                                    has_files = true;
+                                                    $.ligerDialog.confirm('该节点已存在一个或多个文件，如果在该节点下创建子节点，需要将该节点下的数据移动至新创建的子目录中，确定要继续？', function (click_event) {if(click_event == true){if(popText(node, e)){has_files = true;}}});
+                                                }
+                                            }
+                                        });
+                                    }else if(data == "false"){
+                                        openLoginDialog("Login.html");
+                                    }
+                                }
+                            })
+
+                        }},
+                        { id: 1, text: '修改子目录', click: function(node, e){
+                            $.post("checkSession", function(data, status){
+                                if(status == "success"){
+                                    if (data == "true"){
+                                        alterTreeItem(node);
+                                    }else if(data == "false"){
+                                        openLoginDialog("Login.html");
+                                    }
+                                }
+                            })
+
+                        }}, { line: true },
+                        { id: 2, text: '删除子目录', click: function(){
+                            $.post("checkSession", function(data, status){
+                                if(status == "success"){
+                                    if (data == "true"){
+                                        removeTreeItem();
+                                    }else if(data == "false"){
+                                        openLoginDialog("Login.html");
+                                    }
+                                }
+                            })
+                        } }
+                    ]
+            });
+
+            function move_files_to(newnode, oldNode){
+                if(newnode != null){
+                    $.post('removeFileTo', {
+                        'newNode': newnode,
+                        'oldNode': {'id': oldNode.data.id, 'pid': oldNode.data.pid}
+                    }, function (responseData, status) {
+                        if (status == "success") {
+                            if (responseData == "true"){
+                                //alert("文件移动成功");
+                                return true;
+                            } else if (responseData == "false"){
+                                alert("文件移动失败，请重试！");
+                                return false;
+                            }
+                        }
+                    });
+                }
+            }
+
+            $("#container").ligerLayout({leftWidth:200});
+            var rebuild_tree = new Array();
+            function rebuild_files_count(array_data){
+                $.each(array_data, function(index, data){
+                    var files = null;
+                    if(data["children"] != null){
+                        $.each(data["children"], function(_index, _data){
+                            rebuild_files_count(data["children"]);
+                            files += _data.filesCount;
+                            data.filesCount = files;
+                            rebuild_tree.push(data);
+
+                        });
+
+                     }else{
+                        rebuild_tree.push(data);
+                    }
+
+                });
+            }
+            function add_file_count(selector, files_count){
+                var counts = $(selector).find("li");
+                if(counts.length > 0){
+                    $.each(counts, function(index, data){
+                        $.each(files_count, function(index, count){
+                            if($(data).attr("id") == count.id){
+                                //$(data).children("div").append("<span id='files_count'>"+"&nbsp&nbsp["+count.filesCount+"]"+"</span>");
+                                $(data).children("div").children(".fileCount").html("&nbsp&nbsp["+count.filesCount+"]");
+                            }
+                        });
+                    })
+                }
+
+            }
+
+            function undulpicate(array){ //array数据去重
+                for(var i=0;i<array.length;i++) {
+                    for(var j=i+1;j<array.length;j++) {
+                    //注意 ===
+                        if(array[i]===array[j]) {
+                            array.splice(j,1);
+                            j--;
+                        }
+                    }
+                }
+                return array;
+            }
+
+            var toOtherPageNode = null;
+            var toUploadManager = null;
+            var gridmanager = null;
+            var griddata = null;
+
+            function getChirldNode(selector){
+                var tree_manager = $(selector).ligerGetTreeManager();
+                $.post('get_file_count', function(nodedata, status){
+                    if(status == "success"){
+                        tree_manager.arrayToTree(nodedata, 'id', 'pid');
+                        rebuild_files_count(nodedata);
+                        //console.log(rebuild_tree);
+                        var files_count = undulpicate(rebuild_tree);
+                        add_file_count(selector, files_count);
+                    }
+                });
+
+            }
+            //getChirldNode("#tree1");
+            var idata = null;
+            function setgrid(griddata){
+                idata = {Rows: griddata};
+                gridmanager = $("#gridData").ligerGrid({
+                    columns: [
+                        {display: '文件名', name: 'fileName', align: 'left', Width: 40 } ,
+                        { display: '上传用户', name: 'user', Width: 10, align: 'center' },
+                        { display: '上传日期', name: 'uploadDate', Width: 40, align: 'center' },
+                        { display: '是否共享', name: 'ifShare', Width: 5, align: 'center' }
+                    ],
+                    data: idata, pageSize: 15, sortName: 'user',
+                    where: f_getWhere(),
+                    width: '100%', height: 600, checkbox: true, rownumbers:true,
+                    fixedCellHeight:false,isScroll: true,
+                })
+            }
+            //初始化表单样式
+            $("#gridData").ligerGrid({
+                    columns: [
+                        {display: '文件名', name: 'fileName', align: 'left', Width: 40 } ,
+                        { display: '上传用户', name: 'user', Width: 10, align: 'center' },
+                        { display: '上传日期', name: 'uploadDate', Width: 40, align: 'center' },
+                        { display: '是否共享', name: 'ifShare', Width: 5, align: 'center' }
+                    ],
+                    width: '100%', height: 600, checkbox: true, rownumbers:true,
+                    fixedCellHeight:false,isScroll: true,
+                });
+
+            $("#menu").ligerAccordion({
+                speed: true,
+                height: 400,
+                width: 400
+            });
+            function updataDialog(htmlurl){
+                $.ligerDialog.open({
+                    height:600,
+                    width: 800,
+                    title : '上传文件',
+                    url: htmlurl,
+                    showMax: false,
+                    showToggle: true,
+                    showMin: false,
+                    isResize: true,
+                    slide: false,
+                    isHidden: false,
+                    showToggle: false,
+                    data:{
+                        id: toOtherPageNode.data.id,
+                        pid: toOtherPageNode.data.pid
+                    },
+                    onClosed: function(){
+                        //getChirldNode("#tree1");
+                        var node = treeManager.getSelected();
+                        treeManager.cancelSelect(node.data.id);
+                        treeview();
+                        //alert(node.data.id);
+                        setTimeout(function(){
+                            treeManager.selectNode(node.data.id);
+                            //gridmanager.getUpdated();
+                        }, 50);
+
+                        //treeManager.selectNode(node.data.id);
+
+                    }
+                });
+            }
+            function files_upload(item){
+                var item = item;
+                $.post("checkSession", function(data, status){
+                    if(status == "success"){
+                        var manager = $("#tree1").ligerGetTreeManager();
+                        if (data == "true"){
+                            if (toOtherPageNode == null){
+                                $.ligerDialog.question('请在左侧目录树选择一个文件上传节点');
+                                return false;
+                            }else if(node = manager.getSelected()){
+                                if(node.data.children != undefined && node.data.children.length > 0){
+                                    //alert(item.text);
+                                    //item.setDisabled();
+                                    alert("父级节点不允许上传文件，请创建子节点或直接选\n择该父节点下的子节点后重试文件上传操作");
+                                    alert(node.data.pid);
+                                    return false;
+                                }
+                            }
+                            updataDialog('filesUpload');
+                        }else if(data == "false"){
+                            openLoginDialog("Login.html");
+                        }
+
+
+                    }
+                })
+            }
+            var toolbar = $(".topbar").ligerToolBar({
+                items: [
+                    {text: '文件上传', click: function(item){if(files_upload(item) == false){item.setDisable()}}},
+                    {line: true},
+                    //{text: '文件移动', click: function(item){alert(item)}},
+                    //{line: true},
+                    {text: '文件共享', click: function(item){oprationalRowsData(item)}},
+                    {line: true},
+                    {text: '取消共享', click: function(item){oprationalRowsData(item)}},
+                    {line: true},
+                    {text: '删除到回收站', click: function(item){oprationalRowsData(item)}},
+                    {line: true},
+                    {text: '删除', click: function(item){oprationalRowsData(item)}},
+                    {line: true},
+                    {text: '文件下载', click: function(item){
+                        //alert(item.target)
+                            var rows = gridmanager.getSelectedRows();
+                            selected_row_data = JSON.stringify(rows);
+                            var form = $("<form>");   //定义一个form表单
+                            form.attr('style', 'display:none');   //在form表单中添加查询参数
+                            form.attr('target', '');
+                            form.attr('method', 'post');
+                            form.attr('action', "file_download/Files");
+                            //form.append("{% csrf_token %}");
+
+                            var input1 = $('<input>');
+                            input1.attr('type', 'hidden');
+                            input1.attr('name', 'files');
+                            input1.attr('value', selected_row_data);
+                            $('body').append(form);  //将表单放置在web中
+                            form.append(input1);   //将查询参数控件提交到表单上
+                            form.submit();
+                        }
+                    },
+                    {line: true},
+                    {text: '文件恢复', click: function(item){oprationalRowsData(item)}}
+                ]
+            });
+            function openLoginDialog(htmlurl){
+                $.ligerDialog.open({
+                    opener: "loginDialog",
+                    name: "loginFrame",
+                    height:430,
+                    width: 500,
+                    title : '登陆',
+                    url: htmlurl,
+                    showMax: false,
+                    showToggle: true,
+                    showMin: false,
+                    isResize: false,
+                    slide: false,
+                    isHidden: false,
+                    showToggle: false,
+                    onClosed: function(){
+                        window.location.reload();
+                    }
+                });
+            };
+            function openRegisterDialog(htmlurl){
+                $.ligerDialog.open({
+                    name: "registerFrame",
+                    height:430,
+                    width: 500,
+                    title : '注册',
+                    url: htmlurl,
+                    showMax: false,
+                    showToggle: true,
+                    showMin: false,
+                    isResize: false,
+                    slide: false,
+                    isHidden: false,
+                    showToggle: false,
+                    onClosed: function(){
+                        window.location.reload();
+                    }
+                });
+            };
+            $("#login").click(function(){
+                openLoginDialog("Login.html")
+            });
+            $("#register").click(function(){
+                openRegisterDialog("Register.html")
+            });
+            $("#loginOut").on('click', function(){
+                $.post('loginOut', {'loginOut': 1}, function(data, status){
+                    if(status == "success"){
+                        window.location.reload();
+                    }
+                })
+            });
+
+            var database_has_change = null;
+            function oprationalRowsData(item){
+                var rows = gridmanager.getSelectedRows();
+                var rowObj = (JSON.stringify(rows));
+                var oprationalError = null;
+                var oprationalSuccessful = null;
+                var func = null;
+                if(item.text == "删除到回收站"){
+                    if (rows == '') { alert('请选择需要删除的数据'); return;}
+                    var flag = 0;
+                    func = function(){gridmanager.removeRange(rows);};
+                    oprationalError = "数据删除到回收站失败，请重试";
+                    oprationalSuccessful = "数据删除到回收站成功";
+                }else if(item.text == "文件共享"){
+                    if (rows == '') { alert('请选择需要共享的数据'); return;}
+                    var flag = 1;
+                    func = function(){gridmanager.getUpdated();};
+                    oprationalError = "数据共享失败，请重试";
+                    oprationalSuccessful = "数据共享成功";
+                }else if(item.text == "取消共享"){
+                    if (rows == '') { alert('请选择需要取消共享的数据'); return;}
+                    var flag = 2;
+                    func = function(){gridmanager.getUpdated();};
+                    oprationalError = "取消数据共享失败，请重试";
+                    oprationalSuccessful = "取消数据共享成功";
+                }else if(item.text == "文件移动至"){
+                    if (rows == '') { alert('请选择需要移动的文件'); return;}
+                    var flag = 3;
+                    func = function(){gridmanager.getUpdated();};
+                    oprationalError = "文件移动失败，请重试";
+                    oprationalSuccessful = "移动文件成功";
+                }else if(item.text == "删除"){
+                    if (rows == '') { alert('请选择需要删除的文件'); return;}
+                    var flag = 4;
+                    func = function(){gridmanager.getUpdated();};
+                    oprationalError = "文件删除失败，请重试";
+                    oprationalSuccessful = "文件删除成功";
+                }else if(item.text == "文件恢复") {
+                    if (rows == '') {
+                        alert('请选择需要恢复的文件');
+                        return;
+                    }
+                    var flag = 5;
+                    func = function () {
+                        gridmanager.getUpdated();
+                    };
+                    oprationalError = "文件恢复失败，请重试";
+                    oprationalSuccessful = "文件恢复成功";
+                }
+                $.post('oprationalRowsData', {"rowsData": rowObj, "fileOprational": flag}, function(data, status){
+                    if(status == "success"){
+                        //alert(data);
+                        if(data == "1"){
+                            database_has_change = data;
+                            func();
+                            gridmanager.getUpdated();
+                            var node = treeManager.getSelected();
+                            if (node){
+                                treeManager.selectNode(node.data.id);
+                                get_accordion_files_count();  //当数据库有更新市，自动ajax获取最新共享数据
+                                alert(oprationalSuccessful);
+                                treeview();
+                            }else{
+                                get_accordion_files_count();  //当数据库有更新市，自动ajax获取最新共享数据
+                                alert(oprationalSuccessful);
+                                treeview();
+                            }
+
+                        }else(alert(responseError));
+                    }
+                })
+            }
+
+            function f_getWhere() {
+                if (!gridmanager) {return null};
+                var clause = function (rowdata, rowindex) {
+                    var selected = $('#searchData').find("option:selected").text();
+                    if(selected == "文件名"){
+                        var filename = $("#searchText").val();
+                        return ((rowdata.fileName.indexOf(filename) > -1));
+                    }else if(selected == "上传用户"){
+                        var userName = $("#searchText").val();
+                        return ((rowdata.user.indexOf(userName) > -1));
+                    }
+                };
+                return clause;
+            };
+            $("#searchButton").click(function(){
+                if (!gridmanager) {return false};
+                gridmanager.options.data = $.extend(true, {}, idata);
+                gridmanager.loadData(f_getWhere());
+            });
+            //var pid = treeManager.
+            $("#txt3").ligerComboBox({
+                width: 200,
+                selectBoxWidth: 200,
+                selectBoxHeight: 200,
+                textField:'text', valueField: 'id',treeLeafOnly:true,
+                tree: {
+                    url: "treeView",
+                    checkbox: false,
+                    idFieldName: 'id',
+                    parentIDFieldName: 'pid',
+                    slide: true,
+                    parentIcon: "folder",
+                    childIcon: "folder"
+
+                },
+                onSelected: function(selected_value){
+                    new_node = {"id": selected_value};
+                    tree_node = treeManager.getSelected();
+                    old_node = {"id": tree_node.data.id, "pid": tree_node.data.pid};
+                    var rows = gridmanager.getSelectedRows();
+                    selected_row_data = JSON.stringify(rows);
+                    //gride_data = {"gride_data": selected_row_data};
+                    $.post("move_files_to", {"new_node": new_node, "old_node": old_node, "gride_data": selected_row_data}, function(data, status){
+                        if(status == "success"){
+                            if(data == "true"){
+                                alert("文件移动成功");
+                                treeview();
+                                gridmanager.deleteRange(rows);
+                                treeManager.selectNode(tree_node.data.id);
+                            }
+                            else if(data == "false"){alert("文件移动失败，请重试！")}
+                        }
+                    })
+
+                }
+            });
+            function get_accordion_files_count(){
+                $.post("get_accordion_files_count", function(data, status){
+                    if(status == "success"){
+                        $("#shared_count").html("["+data.shared_files+"]");
+                        $("#others_shared_count").html("["+data.others_shared_files_count+"]");
+                        $("#removed_files_count").html("["+data.removed_files_count+"]");
+                    }
+                })
+            }
+            function get_files(selector){
+                var opration_flag = null;
+                if(selector == "#get_shared_files"){
+                    opration_flag = 1;
+                }else if(selector == "#get_others_shared_files"){
+                    opration_flag = 2;
+                }else if(selector == "#removed_files"){
+                    opration_flag = 3;
+                }
+                $(selector).click(function(){
+                    //$('div[toolbarid="item-5"]').hide();
+                    $.post("get_files", {"opration_flag": opration_flag}, function (data, status){
+                        if (status == "success"){
+                            griddata = data;
+                            setgrid(griddata);
+                            gridmanager.changePage("first");
+                            return true;
+                        }
+                    })
+                });
+
+            }
+
+            get_files("#get_shared_files"); //获取已共享的文件
+            get_files("#get_others_shared_files"); //获取他人共享的文件
+            get_files("#removed_files");  //获取删除到回收站的文件
+            get_accordion_files_count(); //页面每次刷新，自动获取已共享的文件数目
+
+            $(".l-accordion-header").on('click', function(){            //针对不同layout item项的的toolbar展示
+                var first_child_class_name = $(this).children("div").first().attr("class");
+                var last_child_class_text = $(this).children("div").last().html();
+                if(last_child_class_text == "我的共享"){
+                    $('div[toolbarid="item-1"]').hide();
+                    $('div[toolbarid="item-2"]').hide();
+                    $('div[toolbarid="item-3"]').show();
+                    $('div[toolbarid="item-4"]').show();
+                    $('div[toolbarid="item-5"]').show();
+                    $('div[toolbarid="item-6"]').show();
+                    $('div[toolbarid="item-7"]').hide();
+                    $('div[toolbarid="item-1"]').next(".l-bar-separator").hide();
+                    $('div[toolbarid="item-2"]').next(".l-bar-separator").hide();
+                    $('div[toolbarid="item-7"]').next(".l-bar-separator").hide();
+                }
+                else if(last_child_class_text == "他人的共享"){
+                    $('div[toolbarid="item-1"]').hide();
+                    $('div[toolbarid="item-2"]').hide();
+                    $('div[toolbarid="item-3"]').hide();
+                    $('div[toolbarid="item-4"]').hide();
+                    $('div[toolbarid="item-5"]').hide();
+                    $('div[toolbarid="item-6"]').show();
+                    $('div[toolbarid="item-7"]').hide();
+                    $('div[toolbarid="item-1"]').next(".l-bar-separator").hide();
+                    $('div[toolbarid="item-2"]').next(".l-bar-separator").hide();
+                    $('div[toolbarid="item-3"]').next(".l-bar-separator").hide();
+                    $('div[toolbarid="item-4"]').next(".l-bar-separator").hide();
+                    $('div[toolbarid="item-5"]').next(".l-bar-separator").hide();
+                    $('div[toolbarid="item-7"]').next(".l-bar-separator").hide();
+
+                }
+                else if(last_child_class_text == "回收站"){
+                    $('div[toolbarid="item-1"]').hide();
+                    $('div[toolbarid="item-2"]').hide();
+                    $('div[toolbarid="item-3"]').hide();
+                    $('div[toolbarid="item-4"]').hide();
+                    $('div[toolbarid="item-5"]').show();
+                    $('div[toolbarid="item-7"]').show();
+                    $('div[toolbarid="item-1"]').next(".l-bar-separator").hide();
+                    $('div[toolbarid="item-2"]').next(".l-bar-separator").hide();
+                    $('div[toolbarid="item-3"]').next(".l-bar-separator").hide();
+                    $('div[toolbarid="item-4"]').next(".l-bar-separator").hide();
+                }
+                else{
+                    $('div[toolbarid="item-1"]').show();
+                    $('div[toolbarid="item-2"]').show();
+                    $('div[toolbarid="item-3"]').show();
+                    $('div[toolbarid="item-4"]').show();
+                    $('div[toolbarid="item-5"]').show();
+                    $('div[toolbarid="item-6"]').show();
+                    $('div[toolbarid="item-7"]').hide();
+                }
+            })
+        })
+    </script>
+</head>
+<body>
+    <div id="top">
+        <div id="user">
+            {% if userName %}
+                <span id="welcomeUser">欢迎光临，</span>
+                <strong id="logined">{{ userName }}</strong>
+                <span id="login" style="display: none">登陆</span>
+                <span id="register" style="display: none">注册</span>
+                <span id="loginOut">注销</span>
+            {% else %}
+                <span id="login">登陆</span> /
+                <span id="register">注册</span>
+            {% endif %}
+        </div>
+    </div>
+    <div id="container">
+        <div position="left" title="功能菜单" id="menu">
+            <div title="文件列表">
+                <ul id="tree1"></ul>
+            </div>
+            <div title="我的共享">
+                <ul style="margin-top: 10px">
+                    <li style="margin-left: 30px"><img src="../static/lib\ligerUI\skins\Aqua\images\tree\folder.gif" alt=""><span id="get_shared_files">已共享的文件</span><span id="shared_count">[0]</span></li>
+                </ul>
+            </div>
+            <div title="他人的共享">
+                <ul style="margin-top: 10px">
+                    <li style="margin-left: 30px"><img src="../static/lib\ligerUI\skins\Aqua\images\tree\folder.gif" alt=""><span id="get_others_shared_files">他人已共享的文件</span><span id="others_shared_count">[0]</span></li>
+                </ul>
+            </div>
+             <div title="回收站">
+                <ul style="margin-top: 10px">
+                    <li style="margin-left: 30px"><img src="../static/lib\ligerUI\skins\Aqua\images\tree\folder.gif" alt=""><span id="removed_files">已删除的文件</span><span id="removed_files_count">[0]</span></li>
+                </ul>
+            </div>
+        </div>
+        <div position="center" title="文件列表" id="center">
+            <div class="topbar"></div>
+            <div style="width: 80px; float: left; height: 20px; line-height: 20px">移动文件至：</div>
+            <div id="div3" style="width: 220px; float: left">
+                <input type="text" id="txt3"/>
+            </div>
+            <div>
+                <select name="searchData" id="searchData" ligeruiid="ddlDepart" style="padding:4px 0px 0px 0px;margin-left:50px;">
+                    <option value="1" selected="selected">文件名</option>
+                    <option value="2">上传用户</option>
+                </select>
+
+                <input type="text" style="padding:4px 0 1px 0; width: 150px" id="searchText">&nbsp
+                <input type="button" class="l-button" id="searchButton" value="查询">
+            </div>
+            <div id="gridData" style="margin: 0; padding: 0"></div>
+        </div>
+        <div id="addSubdirDialog">
+            <p4>子目录名称:　<input type="text" id="subDirName" onkeyup="value=value.replace(/\s/g,'')"/><b style="color: red;">*</b></p4>
+            <span id="error">尚未指定目录名称</span>
+        </div>
+        <div id="alterSubdirName">
+            <p4>目录名称　<input type="text" id="dirName" onkeyup="value=value.replace(/\s/g,'')"/><b style="color: red;">*</b></p4>
+            <span id="error1">尚未指定目录名称</span>
+        </div>
+        <div id="removeDialog_simple" style="display: none">
+            <div class="l-dialog-image l-dialog-image-question" style="display: block"></div><p class="question">确定要删除？</p>
+            <div id="checkbox"><input id="_checkbox" type="checkbox" checked="false">&nbsp;移动至回收站</div>
+        </div>
+        <div id="updataItems">
+
+        </div>
+    </div>
+    <div style="display: none"></div>
+</body>
+</html>

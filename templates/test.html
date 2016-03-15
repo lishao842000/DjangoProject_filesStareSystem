@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html"
+      xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html"
+      xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <link rel="stylesheet" href="../static/zTree_v3/css/zTreeStyle/zTreeStyle.css">
+    <script type="text/javascript" src="../static/zTree_v3/js/jquery-1.4.4.min.js"></script>
+    <script type="text/javascript" src="../static/zTree_v3/js/jquery.ztree.all-3.5.min.js"></script>
+    <SCRIPT type="text/javascript">
+{#        $.ajaxSetup({#}
+{#            dataType: "json",#}
+{#            beforeSend: function(xhr, settings){#}
+{#                var csrftoken = $.cookie('csrftoken');#}
+{#                xhr.setRequestHeader("X-CSRFToken", csrftoken);#}
+{#                }#}
+{#            });#}
+        function displayError(){
+           if ($(".crash").HTML != undefined){
+               $(this).css("display", "block");
+           }
+        }
+
+        function zTreeOnClick(event, treeId, treeNode) {
+            alert(treeNode.id + ", " + treeNode.name + "," + treeNode.pId);
+            $("input[name='id']").val(treeNode.id);
+            $("input[name='pId']").val(treeNode.pId);
+            $("input[name='name']").val(treeNode.name);
+            $("input[name='open']").val(treeNode.open);
+            var ID = null;
+            var id = treeNode.id;
+            $.get("/getFileTree/getdata", {ID: id}, function(data, status){
+                if (status == "success"){
+                    $("tbody").empty();
+                    $("#date").append(data);
+                }
+            });
+        };
+        var List = null;
+        $(document).ready(function(){
+            List = {{ mylist|safe }};
+        });
+        function zTreeBeforeRename(treeId, treeNode, newName, isCancel) {
+	        return newName.length > 5;
+        }
+        var setting = {
+            data : {
+                key : { title : "title"},
+                keep : {
+                    parent : true,
+                    leaf : true
+                },
+                simpleData : {
+                      enable : true
+                }
+            },
+            edit: {
+                enable: true,
+                showRemoveBtn: true,
+                removeTitle: "删除节点"
+            },
+            callback : {
+                onClick: zTreeOnClick
+            }
+
+        };
+          /*
+          zTreeNodes = [
+            {"name":"网站导航", open:false, children: [
+                { "name":"google", "url":"http://g.cn", "target":"_blank"},
+                { "name":"baidu", "url":"http://baidu.com", "target":"_blank"},
+                { "name":"sina", "url":"http://www.sina.com.cn", "target":"_blank"}
+                ]
+            }
+          ];
+          */
+        zTreeNodes = [
+
+            { id:1, pId:0, name:"pNode 1dsadasdasdsadsadsada", open:true, tittle: 'root'},
+            { id:11, pId:1, name:"pNode 11"},
+            { id:111, pId:11, name:"leaf node 111"},
+            { id:112, pId:11, name:"leaf node 112"},
+            { id:113, pId:11, name:"leaf node 113"},
+            { id:114, pId:11, name:"leaf node 114"},
+            { id:12, pId:1, name:"pNode 12"},
+            { id:121, pId:12, name:"leaf node 121"},
+            { id:122, pId:12, name:"leaf node 122"},
+            { id:123, pId:12, name:"leaf node 123"},
+            { id:124, pId:12, name:"leaf node 124"},
+            { id:13, pId:1, name:"pNode 13 - no child", isParent:true},
+            { id:2, pId:0, name:"pNode 2"},
+            { id:21, pId:2, name:"pNode 21", open:true},
+            { id:211, pId:21, name:"leaf node 211"},
+            { id:212, pId:21, name:"leaf node 212"},
+            { id:213, pId:21, name:"leaf node 213"},
+            { id:214, pId:21, name:"leaf node 214"},
+            { id:22, pId:2, name:"pNode 22"},
+            { id:221, pId:22, name:"leaf node 221"},
+            { id:222, pId:22, name:"leaf node 222"},
+            { id:223, pId:22, name:"leaf node 223"},
+            { id:224, pId:22, name:"leaf node 224"},
+            { id:23, pId:2, name:"pNode 23"},
+        ];
+        $(document).ready(function(){
+            $.fn.zTree.init($("#treeDemo"), setting, List);
+            displayError();
+        });
+        function getFiles(){
+            var f = $("#input").get(0).files;
+            $("#ifShare").css("display","none");
+            $("#input").after("</br>");
+            if ($("form").find("div").find("p3")){
+                //$("div").remove();
+                $("p3").remove();
+                $("br").remove();
+                $("#ifShare").css("display","none");
+                $.each(f, function(index, file){
+                    info = file.name+"         "+ Math.round((file.size)*100/1024)/100+"KB"
+                    $("#ifShare").before("<div><p3>"+info+"</p3></div>");
+                });
+                $("#ifShare").css("display","block");
+            }else{
+                //$("#ifShare").css("display","none");
+                $.each(f, function(index, file){
+                    info = file.name+"         "+ Math.round((file.size)*100/1024)/100+"KB"
+                    //alert(index+":"+file.name+"    "+ Math.round((file.size)*100/1024)/100+"KB");
+                    $("#ifShare").before("<div><p3>"+info+"</p3></div>");
+                });
+                $("#ifShare").css("display","block");
+            };
+            $("#ifShare").before("</br>");
+            //$("#ifShare").css("display","none");
+        };
+    </SCRIPT>
+</head>
+<body>
+<h2>文件上传</h2>
+<form action="/getFileTree/uploadfile" enctype="multipart/form-data" method="post">
+    <ul>
+        <li>
+            <input type="text" name="id" value="id">
+            <input type="text" name="pId" value="pId">
+            <input type="text" name="name" value="name">
+            <input type="text" name="open" value="open">
+        </li>
+    </ul>
+    <input type="file" id="input" name="myfile" onchange="getFiles();" multiple=""></br>
+    <div id="ifShare" style="display: none;"><input type="checkbox" name="ifshare"><p4>是否共享</p4></div>
+    <input type="submit" name="doupload" value="上传文件" style="display: block;">
+</form>
+<a href="/list?ID=200">try click me</a></br>
+<strong>{{ ID }}</strong>
+<a href="/filelist">文件列表</a></br>
+{% for i in files %}
+<strong>{{ i }}</strong></br>
+{% endfor %}
+<a href="/getFileTree">json</a></br>
+<ul id="treeDemo" class="ztree"></ul>
+<div id="viewFiles" style="margin: 0px;padding: 0px; border: 0px; ">
+    <table border="1" width="1000" id="date">
+        <thead style="text-align: center">
+            <tr>
+                <td><h3>id</h3></td>
+                <td><h3>pId</h3></td>
+                <td><h3>name</h3></td>
+                <td><h3>open</h3></td>
+                <td><h3>filesName</h3></td>
+                <td><h3>files</h3></td>
+                <td><h3>user</h3></td>
+                <td><h3>uploadData</h3></td>
+                <td><h3>ifShare</h3></td>
+            </tr>
+        </thead>
+    </table>
+    <strong style="display: none;" class="crash">{{ crash }}</strong>
+</div>
+</body>
+</html>

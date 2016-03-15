@@ -1,0 +1,134 @@
+.tools{
+    padding-bottom: 10px;
+    border-bottom: 1px solid silver;
+
+}
+.custom{
+    margin-left: 25px;
+}
+.con-left{
+    margin-top: 10px;
+}
+.fileList-left{
+    background-color: snow;
+}
+#nav{
+    margin-left: 10px;
+    padding-top: 2px;
+}
+#nav li a{
+    font-family: Roman;
+    font-size: 18px;
+}
+.contain{
+    width: 100%;
+    height:auto;
+}
+.expander:hover{
+    cursor: e-resize;
+}
+.left{
+    padding-top: 10px;
+    width:300px;
+    max-width: 700px;
+    height:700px;
+    float: left;
+}
+.left a{
+    display: block;
+}
+.sideBar{
+    width:99%;
+    height:inherit;
+    float: left;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+.sideBar::-webkit-scrollbar-thumb:hover{
+    background-color: silver;
+}
+.expander{
+    width: 0.5%;
+    height: inherit;
+    background-color: #E8E8E8;
+    float: right;
+}
+.sideBar::-webkit-scrollbar{
+    width: 6px;
+    height: 5px;
+    background-color: white;
+}
+.sideBar::-webkit-scrollbar-button{
+    display: none;
+}
+.sideBar::-webkit-scrollbar-thumb{
+    background-color: #cccccc;
+    border-radius:4px;
+}
+
+.sideBar::-webkit-scrollbar-track-piece{
+    display: none;
+}
+.right{
+    width: auto;
+    height: 300px;
+}
+table{
+    border-top: none;
+}
+input[type=checkbox]{
+    width: 15px;
+    height: 15px;
+}
+.checkboxThreeInput[type=checkbox]{
+    visibility: hidden;
+}
+.checkboxThree {
+	width: 80px;
+	height: 25px;
+	background: #333;
+	border-radius: 50px;
+	position: relative;
+}
+.checkboxThree:before {
+	content: '是';
+	position: absolute;
+	top: 5px;
+	left: 14px;
+	height: 2px;
+    color: #26ca28;
+	font-size: 8px;
+}
+.checkboxThree:after {
+	content: '否';
+	position: absolute;
+	top: 5px;
+	left: 52px;
+	height: 2px;
+    color: #ddd;
+	font-size: 8px;
+}
+.checkboxThree label {
+	display: block;
+	width: 32px;
+	height: 20px;
+	border-radius: 50px;
+
+	-webkit-transition: all .5s ease;
+	-moz-transition: all .5s ease;
+	-o-transition: all .5s ease;
+	-ms-transition: all .5s ease;
+	transition: all .5s ease;
+	cursor: pointer;
+	position: absolute;
+	top: 2px;
+	z-index: 1;
+	left: 12px;
+	background: #cccccc;
+}
+
+.checkboxThree input[type=checkbox]:checked + label {
+	left: 40px;
+	background: #26ca28;
+}
+

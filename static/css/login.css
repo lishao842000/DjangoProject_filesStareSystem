@@ -1,0 +1,71 @@
+body,input,fieldset{
+    margin: 0px;
+    padding: 0px;
+    border: none;
+}
+.container{
+    /*height: 210px;*/
+    /*width: 380px;*/
+    height: auto;
+    width: auto;
+    background-color: white;
+    overflow: hidden;
+}
+fieldset{
+    margin-top: 50px;
+    margin-left: 120px;
+}
+.input_all{
+    border:none;
+	color:#555;
+	font-size:14px;
+	line-height:30px;
+	padding:10px 0 10px 46px;
+	vertical-align:middle;
+	width:190px;
+	height:30px
+}
+#userName{
+    background: url("../../static/image/login/input_name.png") no-repeat scroll left top;
+}
+
+#password{
+    background: url("../../static/image/login/input_password.png") no-repeat scroll left top;
+    margin-bottom: 15px;
+}
+#remenber{
+    display: block;
+    float: left;
+    margin: 5px 4px 3px 4px;
+}
+.checkbox label span{
+    color: #b5b5b5;
+    font-size: 12px;
+    float: left;
+    display: block;
+}
+#submit{
+    margin-top: 20px;
+    width: 200px;
+    height: 45px;
+    cursor: pointer;
+    font-family: "΢���ź�";
+    font-size: 16px;
+    height: 40px;
+    line-height: 40px;
+    background: rgba(0, 0, 0, 0) linear-gradient(#57b4f0, #33a4ec) repeat scroll 0 0;
+    color: #FFFFFF;
+    margin-right: 120px;
+}
+
+#extraInfo{
+    color: #b5b5b5;
+    font-size: 12px;
+    margin-left: 50px;
+}
+#forgotPass, #Register{
+    cursor: pointer;
+}
+#loginOut{
+    cursor: pointer;
+}

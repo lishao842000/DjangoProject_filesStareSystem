@@ -1,0 +1,15 @@
+<tbody style="text-align: center" id="tableData">
+{% for d in alldata %}
+    <tr>
+        <td>{{ d.get_fileTree_id }}</td>
+        <td>{{ d.get_fileTree_pId }}</td>
+        <td>{{ d.get_fileTree_name }}</td>
+        <td>{{ d.get_fileTree_open }}</td>
+        <td align="left">{{ d.files|cut:"uploadFiles/" }}</td>
+        <td align="left">{{ d.files }}</td>
+        <td>{{ d.user }}</td>
+        <td>{{ d.uploadDate|date:"Y-m-d H:i:s" }}</td>
+        <td>{{ d.ifShare }}</td>
+    </tr>
+{% endfor %}
+</tbody>
